@@ -9,7 +9,7 @@ function [cs,cr,N_reloc,N_retrieval,N_stacked,Time,sign_RTGs_status, FinalBlocks
 % assign fixed number of berthcranes to ships
 
 
-global Maxzone Tlimit H
+%global Maxzone Tlimit H
 
 % horizon 
 % Maxzone 
