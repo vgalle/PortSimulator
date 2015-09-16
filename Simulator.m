@@ -1,35 +1,23 @@
 function [cs,cr,N_reloc,N_retrieval,N_stacked,Time,sign_RTGs_status, FinalBlocks,FinalRows,FinalContainers,FinalRTGs, FinalBerthCranes,FinalTrucks,FinalShips] = ...
     Simulator(Blocks,Rows,Containers, BerthCranes, RTGs,Ships, trucks,Heuristic_reloc,Heuristic_stack,within_same_row,Look_ahead)
 
-% Last Modification: 2/6
-% Setareh
+% Last Modification: 9/16
+% Virgile
 
-% change RI in ATIB
-% change horizon and estimation horizon
-% assign fixed number of berthcranes to ships
-
-
-global Maxzone Tlimit H
-
-% horizon 
-% Maxzone 
-% Tlimit 
-
+length_time_step = 1;
 max_stack_wait_time = 2;
 max_retrieve_wait_time = 2;
-
-Time = 1;
-length_time_step = 1;
-N_reloc = 0;
-N_stacked = 0;
-N_retrieval = 0;
-
-% duration_disch_and_transfer = 4 * length_time_step;
 duration_transfer = 2 * length_time_step;
 duration_disch = 2 * length_time_step;
 duration_stack = 2 * length_time_step;
 duration_retrieval = 2 * length_time_step;
-% duration_relocate = 2;
+
+global Maxzone Tlimit H
+
+Time = 1;
+N_reloc = 0;
+N_stacked = 0;
+N_retrieval = 0;
 
 if strcmp(Heuristic_stack,'Closest')
     Block_counter = 1;
@@ -39,18 +27,7 @@ end
 
 B = length(Blocks.ID);
 
-% tempBlocks = Blocks;
 tempRows = Rows;
-
-% BC = length(BerthCranes.ID);
-
-% We keep going until we reached the time limit of the experiment or that
-% the bay is empty.
-
-% if strcmp(Heuristic_reloc,'Kim_Hong') || strcmp(Heuristic_stack,'Kim_Hong');
-%     EN = ENAR_matrix(size(Rows.Config_id(:,:,1),1),size(Rows.Config_id(:,:,1),2));
-% end
-% Tlimit
 
 cs = zeros(2,0);
 cr = zeros(2,0);
@@ -59,47 +36,17 @@ while Time <= Tlimit
 
     Time
     
-%     if  Containers.Block(20)<0
-% 
-%         keyboard
-%     end
-% %     
-%     if Time==274
-%         keyboard
-%     end
-%     
-%     for r=11:11
-%         tempp = Rows.Config_value(:,:,r);
-%         for c=1:7
-%             tempp2 = tempp(:,c);
-%             tempp2 = tempp2(end:-1:1);
-%             for t=1:3
-%                 if tempp2(t)==0 && tempp2(t+1)>0
-%                     r
-%                     c
-%                     t
-%                     display('!!!!')
-%                     keyboard
-%                 end
-%             end
-%         end
-%     end
-    
-
-    
-    % We can take one action per crane i.e per block
-%     if Time == (Time_zone+1)*horizon
-%         Time_zone = Time_zone + 1;
-%         [Rows,Containers] = Change_of_zone(Blocks,Rows,Containers);
-%     end
-    
+% Decisions are made block by block
     for i=1:B
 
-        % We find the ID of the target container that can be retrieved and its row and its row
+% We find the ID of the target containers that can be retrieved and its row and its row
         target_ID = Containers.ID(Containers.Block_value == 1 & Containers.Block == i & Containers.Departure_time<=Time);
-        % We also find the ID of the container that can be stacked (i.e., has been discharged at previous time step or earlier)
+% We also find the ID of the containers that can be stacked (i.e., has been discharged at previous time step or earlier).
         ready_to_stack_IDs = Containers.ID(Containers.Status==-2 & Containers.Block == i & Containers.discharge_time+duration_disch + duration_transfer<=Time);
         
+% The stack_retrieve_decision is 1 if we decide to stack, 2 if we decide to retrieve.
+% If we can do both we use stack_or_retrieve function to decide what to perform.
+% If nothing can be done the RTG for this block is idle and the decision is set to inf.
         if isempty(target_ID) && ~isempty(ready_to_stack_IDs)
             stack_retrieve_decision = 1;
         elseif isempty(ready_to_stack_IDs) && ~isempty(target_ID) 
@@ -110,30 +57,27 @@ while Time <= Tlimit
             RTGs.Status(i,Time) = 0;
             stack_retrieve_decision=inf;
         end
-        
-        if stack_retrieve_decision==2 && RTGs.Status(i,Time)== 0 % if we decide to retrieve:
+ 
+% If we decide to retrieve or relocate and RTG is available in this block at that time:       
+        if stack_retrieve_decision==2 && RTGs.Status(i,Time)== 0
+% If the target container has a retrieval time from this time zone
             if Containers.Departure_zone(target_ID)==0
-                % relocate_ID is the ID of the container that has to be moved. It can be either
-                % a blocking container or the target container.
+% relocate_ID is the ID of the container that has to be moved. It can be either a blocking container or the target container.
                 relocate_ID = Containers.ID(Containers.Row == Containers.Row(target_ID) & ...
                                             Containers.Column == Containers.Column(target_ID) & ...
                                             Containers.Tier == Rows.Height(Containers.Column(target_ID),Containers.Row(target_ID)) & ...
                                             Containers.Status==0);
-                % If the target container is on the top, it is retrieved.
+% If the target container is on the top, it is retrieved.
                 if target_ID == relocate_ID && Containers.Departure_time(target_ID) <= Time
                     [Blocks,Rows,Containers] = Retieval(target_ID,Blocks,Rows,Containers,Maxzone,Time);
                     N_retrieval = N_retrieval + 1;             
                     RTGs.Status(i,Time:Time+duration_retrieval-1) = target_ID;
                     
-                % Otherwise it is moved
+% Otherwise it is moved
                 elseif target_ID ~= relocate_ID
                     switch Heuristic_reloc
                         case 'Myopic'
                             [selected_row, selected_col, selected_tier, same_row] = Myopic_relocate (relocate_ID, within_same_row, Blocks, Rows, Containers);
-%                         case 'ATIB-new-RI'
-%                             [selected_row, selected_col, selected_tier, same_row] = ATIB_relocate (relocate_ID, within_same_row, Blocks, Rows, Containers);
-%                         case 'ATIB-original-RI'
-%                             [selected_row, selected_col, selected_tier, same_row] = ATIB_relocate_original_RI (relocate_ID, within_same_row, Blocks, Rows, Containers, Time);
                         case 'Lowest_Height'
                             [selected_row, selected_col, selected_tier, same_row] = LowHeight_relocate (relocate_ID, within_same_row, Blocks, Rows, Containers);
                         case 'Closest'
@@ -144,8 +88,6 @@ while Time <= Tlimit
                             cr(2,size(cr,2)) = ((Containers.Block(relocate_ID)-1)*B) + ((selected_row-1)*length(Rows.ID)) + selected_col;
                         case 'Petering'
                             [selected_row, selected_col, selected_tier, same_row, relocate_ID] = Petering_relocate (relocate_ID, within_same_row, Blocks, Rows, Containers,Look_ahead);
-%                       case 'Kim_Hong'
-%                           [selected_row, selected_col, selected_tier, same_row] = KimHong_relocate (relocate_ID, within_same_row, Blocks, Rows, Containers,EN);
                     end
                     
                     RTGs.relocate_to_other_rows(1,Containers.Block(relocate_ID))=RTGs.relocate_to_other_rows(1,Containers.Block(relocate_ID))+(~same_row);
@@ -158,48 +100,34 @@ while Time <= Tlimit
                 end
             end        
         end
-        
-        if stack_retrieve_decision==1 && RTGs.Status(i,Time)== 0 % if we decide to stack:
+
+% If we decide to stack and RTG is available in this block at that time:
+        if stack_retrieve_decision==1 && RTGs.Status(i,Time)== 0
+% Take the container that was discharged from the ship the earliest
             earliest_discharged = min(Containers.discharge_time(Containers.Status==-2 & Containers.Block==i ));
             containerID_to_be_stacked = Containers.ID(Containers.Block==i & Containers.discharge_time==earliest_discharged & Containers.Status==-2);
             [~ ,temp] = min(Containers.discharging_crane(containerID_to_be_stacked));
             containerID_to_be_stacked  = containerID_to_be_stacked(temp);
-    
-%             containerID_to_be_stacked = containerID_to_be_stacked(1);
+
             stacking_block = Containers.Block(containerID_to_be_stacked);
             switch Heuristic_stack
                 case 'Myopic'
                    [~, stacking_row, stacking_col, stacking_tier] = Myopic_stack (containerID_to_be_stacked, stacking_block, Blocks, Rows, Containers); 
-%                 case 'ATIB-new-RI'
-%                    [~, stacking_row, stacking_col, stacking_tier] = ATIB_stack (containerID_to_be_stacked, stacking_block, Blocks, Rows, Containers);
-%                 case 'ATIB-original-RI'
-%                    [~, stacking_row, stacking_col, stacking_tier] = ATIB_stack_original_RI (containerID_to_be_stacked, stacking_block, Blocks, Rows, Containers,Time);
                 case 'Lowest_Height'
                    [~, stacking_row, stacking_col, stacking_tier] = LowHeight_stack (stacking_block, Blocks, Rows);
                 case 'RI'
                    [~, stacking_row, stacking_col, stacking_tier] = RI_stack (containerID_to_be_stacked, stacking_block, Blocks, Rows, Containers);
-                   
                    cs(1,size(cs,2)+1)=containerID_to_be_stacked; 
                    cs(2,size(cs,2)) = ((Containers.Block(containerID_to_be_stacked)-1)*B) + ((stacking_row-1)*length(Rows.ID)) + stacking_col;
                 case 'Closest'
                    [~, stacking_row, stacking_col, stacking_tier,Row_counter,Col_counter] = Closest_stack (stacking_block, Blocks, Rows,Row_counter,Col_counter);
-%               case 'Kim_Hong'
-%                  [~, stacking_row, stacking_col, stacking_tier] = KimHong_stack (containerID_to_be_stacked, stacking_block, Blocks, Rows, Containers,EN);
-
             end
             Blocks.num_containers_to_be_stacked_here(stacking_block) = Blocks.num_containers_to_be_stacked_here(stacking_block) -1;
-%             selected_row = Containers.Row(containerID_to_be_stacked);
-%             selected_col = Containers.Column(containerID_to_be_stacked);
-%             selected_tier = Containers.Tier(containerID_to_be_stacked);
-            if H-stacking_tier+1 == 0
-                keyboard
-            end
             [Blocks,Rows,Containers] = stacking(containerID_to_be_stacked,stacking_block, stacking_row, stacking_col, stacking_tier, Blocks,Rows,Containers,Time);
             N_stacked = N_stacked+1;
             RTGs.Status(i,Time:Time+duration_stack-1) = -containerID_to_be_stacked;
             internal_truck_containerID_to_be_stacked = Containers.internal_truck(containerID_to_be_stacked);
             trucks.status(internal_truck_containerID_to_be_stacked, Time+duration_stack+duration_transfer:end)=0;
-            
         end   
     end
     
@@ -247,7 +175,8 @@ while Time <= Tlimit
             end
         end
         
-        % assign truck to BC
+% assign truck to BC
+% We assign at most 6 trucks per BC.
         for bc = 1:total_assigned_BC
             num_assigned_trucks_to_this_BC = min(ceil(num_free_trucks/total_assigned_BC),6);
             if bc==total_assigned_BC
@@ -257,34 +186,12 @@ while Time <= Tlimit
                 trucks.assigned_to_which_BC(free_trucks(counter_truck_assigned:counter_truck_assigned+num_assigned_trucks_to_this_BC-1), Time:end)=assigned_BCs(bc);
                 counter_truck_assigned = counter_truck_assigned + num_assigned_trucks_to_this_BC;
                 total_assigned_trucks = total_assigned_trucks + num_assigned_trucks_to_this_BC;
-        
             end
         end
-
-
-%             [chosen_blocks,~] = Choose_stacking_blocks(Blocks,Numb_of_blocks,Numb_of_cont_to_stack);
-%             Blocks.unassigned_slots_to_ships(chosen_blocks) = Blocks.unassigned_slots_to_ships(chosen_blocks)-Numb_of_cont_to_stack;
     end
-            
-%     if ~isempty(remaining_ships)
-%         if remaining_ships(1)>1
-%             temp = Ships.num_discharged(remaining_ships(1)-1);
-%             temp2 = Ships.Number_cont(remaining_ships(1)-1);
-%             choose_block_for_next_ship = temp==temp2;
-%         else
-%             choose_block_for_next_ship=1;
-%         end
-%         if Time >= ceil(Ships.arrival_time(remaining_ships(1))) && choose_block_for_next_ship
-%             Numb_of_cont_to_stack = Ships.Number_cont(remaining_ships(1));
-%             Ships.discharge_started(remaining_ships(1))=1;
-%             [chosen_blocks,~] = Choose_stacking_blocks(Blocks,Numb_of_blocks,Numb_of_cont_to_stack);
-%             Blocks.unassigned_slots_to_ships(chosen_blocks) = Blocks.unassigned_slots_to_ships(chosen_blocks)-Numb_of_cont_to_stack;
-%         end
-%     end
 
-
+% For ships currently being discharged, decide if a container can be discharged and if so, assign it to a destination block
     ships_still_being_discharged = Ships.ID(Ships.num_discharged<Ships.Number_cont & Ships.discharge_started==1);
-    
     for s =1:length(ships_still_being_discharged)
         this_ship = ships_still_being_discharged(s);
         BCs_this_ship = find(Ships.which_BC_assigned_to_ship(this_ship,:));
@@ -303,18 +210,12 @@ while Time <= Tlimit
                 switch Heuristic_stack
                     case 'Myopic'
                        [stacking_block, Blocks] = Myopic_block_allocation (containerID_to_be_discharged, chosen_blocks, Blocks, Rows, Containers);
-%                     case 'ATIB-new-RI'
-%                        [stacking_block, tempRows, Blocks] = ATIB_block_allocation (containerID_to_be_discharged, chosen_blocks, Blocks, tempRows, Containers);
-%                     case 'ATIB-original-RI'
-%                        [stacking_block, tempRows, Blocks] = ATIB_block_allocation_original_RI (containerID_to_be_discharged, chosen_blocks, Blocks, tempRows, Containers,Time);
                     case 'Lowest_Height'
                        [stacking_block, tempRows, Blocks] = LowHeight_block_allocation (containerID_to_be_discharged,chosen_blocks, Blocks, tempRows);
                     case 'RI'
                        [stacking_block, tempRows, Blocks] = RI_block_allocation (containerID_to_be_discharged, chosen_blocks, Blocks, tempRows, Containers);
                     case 'Closest'
                        [stacking_block, tempRows, Blocks,Block_counter,Row_counter,Col_counter] = Closest_block_allocation (containerID_to_be_discharged, chosen_blocks, Blocks, Rows,Block_counter,Row_counter,Col_counter);
-    %               case 'Kim_Hong'
-    %                  [stacking_block, Blocks] = KimHong_block_allocation (containerID_to_be_discharged, chosen_blocks, Blocks, Rows, Containers,EN);
                 end
                 
                 Blocks.num_containers_to_be_stacked_here(stacking_block) = Blocks.num_containers_to_be_stacked_here(stacking_block)+1;
@@ -332,7 +233,6 @@ while Time <= Tlimit
             end
 
         end
-    %     Rows.Config_value
     end
    Time = Time+1;
    if sum(Containers.Departure_zone)~=0
