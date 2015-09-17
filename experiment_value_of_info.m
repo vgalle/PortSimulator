@@ -42,7 +42,7 @@ different_horizons_known = [15 60 120 180 1000000];
 overall_stats2 = cell(0,length(different_horizons_known));
 % 
 % 
-[Blocks,Rows,Containers, Ships, berthcranes, RTGs, trucks, max_zone, defined_horizon] = Initialization2(Full_info,lambda,mu,total_ships,n_cont_per_ship,B,R,C,numTiers,...
+[Blocks,Rows,Containers, Ships, berthcranes, RTGs, trucks, max_zone, defined_horizon] = Initialization(Full_info,lambda,mu,total_ships,n_cont_per_ship,B,R,C,numTiers,...
                                                                             gamma,horizon_known_length,n_BC,n_RTG,n_trucks);
 % % 
 [overall_stats2{2,1},overall_stats2{3,1},overall_stats2{4,1} ,overall_stats2{5,1},overall_stats2{6,1},overall_stats2{7,1},overall_stats2{8,1},overall_stats2{9,1},...
@@ -51,7 +51,7 @@ overall_stats2 = cell(0,length(different_horizons_known));
 deal('horizon','retrieved','unretrieved','discharged/Not Stacked','undischarged','stacked','numDays','total_rel','ave_rel','max_rel','total_ret_del','ave_ret_del','max_ret_del',...
     'total_stack_del','ave_stack_del','max_stack_del','min_dwell_time','max_dwell_time','n_ships','rate_trucks','rate_ships');
 
-for m = 2:2 %length(heu_relocation)
+for m = 1:1 %length(heu_relocation)
     m
     which_heuristic = m;
     Heuristic_reloc = heu_relocation{which_heuristic};

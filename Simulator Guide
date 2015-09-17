@@ -1,0 +1,65 @@
+
+*******************************************************
+************** Simulator Explanation ******************
+*******************************************************
+
+IMPORTANT: This simulator only takes into account the inbound flow (Ships -> Yard -> Trucks)
+It does not take into account transhipments and outbound flow (Trcuks -> Yard -> Ships)
+
+************ Structure of the simulator ***************
+
+1) Initialize the yard
+
+2) Loop over time
+
+	a) Block moves related: loop over blocks
+		i) Make the decision between stack and retreive
+		ii) If retrieval: either retreive or relocate using Heuristic_reloc
+		iii) If stack: use Heuristic_stack
+
+	b) Ships already discharged: de-assign the berthcranes and the trucks
+
+	c) Ships ready to be discharged:
+		i) Assign berthcranes to ships
+		ii) Assign trucks to berthcranes
+
+	d) Ships being discharged:
+		i) Check if container dischargable
+		ii) Assign destination block
+
+	e) Update time
+
+	f) Update yard information
+
+
+************ Modules ***************
+
+1) Initialization
+Initialize the yard, the ships and the trucks for the experiments
+
+2) Simulator
+Given a initial state of the simulation, uses the decisions rules given as input to manage the flow of containers
+
+	a) stack_or_retreive
+	Decides if there is a conflict at a block in a yard if we want to stack or retreive.
+
+	b) Heuristics
+		i) Relocate: Decides which slots to relocate a blocking container
+		ii) Stack: Decides which slots to stack a incoming container
+		iii) Block_allocation: Uses Heuristic_stack to choose the best block to direct the truck to. The exact slot is determined when the container is ready to be stacked.
+
+	c) Yard modification:
+	Those modules modify the yard after decisions have been made. Therefore we have
+		i) Relocate
+		ii) Retreival
+		iii) Stacking
+
+3) Data Output
+
+
+************ Submodules **************
+
+Initialization2(Full_info,lambda,mu,n_ships,n_cont_per_ship,B,R,C,numTiers,gamma,horizon_length_known_containers,...
+                    n_BC,n_RTG, n_trucks)
+
+

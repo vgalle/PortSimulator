@@ -1,9 +1,13 @@
 function [Blocks,Rows,Containers, Ships, BerthCranes, RTGs, trucks, max_zone, defined_horizon] = ...
-    Initialization2(Full_info,lambda,mu,n_ships,n_cont_per_ship,B,R,C,numTiers,gamma,horizon_length_known_containers,...
+    Initialization(Full_info,lambda,mu,n_ships,n_cont_per_ship,B,R,C,numTiers,gamma,horizon_length_known_containers,...
                     n_BC,n_RTG, n_trucks)
 
 % Last Modification: 2/6
 % Setareh
+
+
+numDays = 3;
+
 
 % Full_info: 1 if all containers are known
 % B: #blocks
@@ -16,20 +20,11 @@ function [Blocks,Rows,Containers, Ships, BerthCranes, RTGs, trucks, max_zone, de
 % ************************************************************************
 % ************************************************************************
 % ************************************************************************
-% time_scale = 15;
 
-
-% Data
-% global duration_disch duration_stack duration_relocate duration_retrieval 
-global H horizon Maxzone Tlimit 
-
-numDays = 3;
-
-
+global H horizon Maxzone Tlimit;
 
 Tlimit = numDays * 1440;
 H = numTiers;
-% horizon_estimated = horizon_length_estimated_containers;
 horizon = horizon_length_known_containers;
 defined_horizon = horizon_length_known_containers;
 
@@ -37,14 +32,8 @@ Nrow = ceil(gamma*(C*(H-1)+1));
 Nblo = R*Nrow;
 Ntot = B*Nblo;
 
-% duration_disch = 1;
-% duration_stack = 1;
-% duration_retrieval = 2;
-% duration_relocate = 2;
-
 % Blocks give the relationship between the blocks and the rows: meaning
 % Rows_in_block are giving the rows ID of the rows in a given block.
-
 
 Blocks = struct('ID',1:B,'Rows_in_block',zeros(R,B),'Number_cont',zeros(1,B),...
                 'Free_spots',(R*C*H-(H-1))*ones(1,B), ...
@@ -54,11 +43,15 @@ for b=1:B
     Blocks.Rows_in_block(:,b) = 1+(b-1)*R:b*R;
 end
 
-% Rows has 7 keys:
-% 1- ID // 2- Number_cont // 3- Cont_in_row the ID of the containers in
-% this row // 4- Height of each column // 5- Minimum of each column // 6-
-% Config_value is the representation of the bay with the values // 7-
-% Config_id is the representation of the bay with the ID.
+% Rows has 8 keys:
+% 1- ID
+% 2- Number_cont
+% 3- Cont_in_row the ID of the containers in this row
+% 4- Height of each column
+% 5- Minimum of each column
+% 6- Config_value is the representation of the bay with the values
+% 7- Config_id is the representation of the bay with the ID
+% 8- isColumnLocked is 1 if the column has a planned stack
 Rows = struct('ID',1:B*R,'Block',zeros(1,B*R),'Number_cont',zeros(1,B*R),'Height',zeros(C,B*R),...
               'Minimum',zeros(C,B*R),'Config_value',zeros(H,C,B*R),'Config_id',zeros(H,C,B*R),...
                'isColumnLocked',zeros(C,B*R));
