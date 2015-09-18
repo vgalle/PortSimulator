@@ -1,7 +1,7 @@
 function  [selected_block, tempRows, Blocks,Block_counter,Row_counter,Col_counter] = ...
     Closest_block_allocation (ID_this_container, chosen_blocks, Blocks, Rows,Block_counter,Row_counter,Col_counter)
 
-% Last Modification: 2/2
+% Last Modification: 9/16
 % Setareh
 
 % the ATIB heuristic tries to place an incoming (or reshuffling)

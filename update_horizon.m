@@ -1,21 +1,17 @@
-function [Blocks,Rows,Containers,RTGs, BerthCranes, new_Maxzone] = update_horizon(Blocks,Rows,Containers,RTGs, BerthCranes,newHorizon)
+function [Blocks,Rows,Containers,RTGs, BerthCranes] = update_horizon(Blocks,Rows,Containers,RTGs, BerthCranes,Time)
 
-global H
-global  horizon Maxzone Tlimit 
+% Last Modification: 9/16
+% Setareh
 
-time_scale = 2;
-
-horizon = newHorizon;
-Tlimit = (Maxzone+1) * horizon * time_scale;
+global H horizon horizon_estimated
 
 R = length(Blocks.Rows_in_block(:,1));
 
+day_of_this_Time = ceil(Time/1440);
 
-new_Maxzone = ceil(max(Containers.Departure_time)/newHorizon);
-Containers.Departure_zone(1,:) = ceil(Containers.Departure_time(1,:)/newHorizon)-1;
+Containers.Departure_zone( Containers.Departure_zone==2 & (day_of_this_Time-1)*1440 <= Containers.Departure_time & Containers.Departure_time < day_of_this_Time*1440) = 1;
 
-Maxzone = new_Maxzone;
-
+Containers.Departure_zone(Containers.Departure_time >= Time & Containers.Departure_time<Time+horizon) =0;
 
 for i=1:length(Blocks.ID)
 % We sort the departure times of containers that are in the bay and from
@@ -31,12 +27,3 @@ for i=1:length(Blocks.ID)
         Rows.Minimum(:,j+(i-1)*R) = mins_of_row(Rows.Config_value(:,:,j+(i-1)*R),Blocks.Number_cont(i));
     end    
 end
-
-% n_BC = length(BerthCranes.ID);
-% BerthCranes.Status = zeros(n_BC,Tlimit);
-% 
-% n_RTG = length(RTGs.ID);
-% RTGs.Status = zeros(n_RTG,Tlimit);
-
-
-

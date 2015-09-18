@@ -1,11 +1,11 @@
 function  [selected_block, Blocks] = ...
     Myopic_block_allocation (ID_this_container, chosen_blocks, Blocks, Rows, Containers)
 
-% Last Modification: 2/8
-% Virgile --> CHANGED BY SETAREH
+% Last Modification: 9/16
+% Seatreh
 
 % We first compute the value of the target to be stacked as well as the
-% dimension of our problem R,C and H.
+% dimension of our problem R and C.
 
 global H
 
@@ -28,7 +28,6 @@ end
 
 R = length(Blocks.Rows_in_block(:,1));
 C = size(Rows.Config_value,2);
-% H = length(Rows.Config_value(:,1));
 
 % The Min_good variable is the best minimum found so far in a good column.
 % R_good and C_good are the coordinates in the matrix minimum where
@@ -44,15 +43,8 @@ Min_bad = 0;
 % between blocks. We chose the block with smallest index which is supposed
 % to be closer to the ship.
 chosen_blocks = sort(chosen_blocks);
-% All_rows = reshape(Blocks.Rows_in_block(:,chosen_blocks),1,R*length(chosen_blocks));
-% minimum = Rows.Minimum(:,Blocks.Rows_in_block(:,chosen_blocks));
-% height = Rows.Height(:,Blocks.Rows_in_block(:,chosen_blocks));
 
 queue_length_selected_block = inf;
-
-%     if ID_this_container==27003
-%         keyboard
-%     end
 
 for b=1:length(chosen_blocks)
     rows_this_block = Blocks.Rows_in_block(:,chosen_blocks(b));
@@ -71,22 +63,19 @@ for b=1:length(chosen_blocks)
     
     queue_length_this_block = Blocks.num_containers_to_be_stacked_here(chosen_blocks(b));
     
-%     this_block = chosen_blocks(b);
-    
     for r=1:R
-%         this_row = Blocks.Rows_in_block(r,this_block);
         for c=1:C
             if height(c,r)~=H 
-    % In that case, we found a good column and we only take a new column if its
-    % minimum is smaller that the previous one.
+% In that case, we found a good column and we only take a new column if its
+% minimum is smaller that the previous one.
                 if minimum(c,r) > value && minimum(c,r) < Min_good 
                     Min_good = minimum(c,r);
                     B_good = b;
                     queue_length_selected_block = queue_length_this_block;
 
-    % In the other case, we have a bad column: we only consider it if we did
-    % not find a good column yet. In that case, we consider it if its minimum
-    % is larger that our previous bad column.
+% In the other case, we have a bad column: we only consider it if we did
+% not find a good column yet. In that case, we consider it if its minimum
+% is larger that our previous bad column.
                 elseif minimum(c,r) <= value && minimum(c,r) > Min_bad && Min_good == Inf
                     Min_bad = minimum(c,r);
                     B_bad = b;
@@ -111,12 +100,9 @@ end
 % Finally we output the coordinate of the slot where to stack the
 % container.
 if Min_good ~= Inf
-
     selected_block = chosen_blocks(B_good);
-
 else
     selected_block = chosen_blocks(B_bad);
-
 end
 Blocks.Free_spots(selected_block) = Blocks.Free_spots(selected_block)-1;
 Blocks.unassigned_slots_to_ships(selected_block) =Blocks.unassigned_slots_to_ships(selected_block)+1;

@@ -1,6 +1,6 @@
 function Mins_row = mins_of_row (row_config,Number_cont_block)
 
-% Last Modification: 2/2
+% Last Modification: 9/16
 % Setareh
 
 global Maxzone

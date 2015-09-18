@@ -1,12 +1,12 @@
 function [Blocks,Rows,Containers] = Retieval(target_ID,Blocks,Rows,Containers,Maxzone,Time)
 
-% Last Modification: 2/2
+% Last Modification: 9/16
 % Virgile
 
 % This function updates the configuration when the retrieval from the
 % target container with target_ID is performed.
 
-H = length(Rows.Config_value(:,1));
+global H
 
 % We decrease by one the number of containers in the block of the container
 % and also in its row.

@@ -45,18 +45,18 @@ overall_stats2 = cell(0,length(different_horizons_known));
 deal('horizon','retrieved','unretrieved','discharged/Not Stacked','undischarged','stacked','numDays','total_rel','ave_rel','max_rel','total_ret_del','ave_ret_del','max_ret_del',...
     'total_stack_del','ave_stack_del','max_stack_del','min_dwell_time','max_dwell_time','n_ships','rate_trucks','rate_ships');
 
-for m = 1:1 %length(heu_relocation)
+for m = 4:4 %length(heu_relocation)
     m
     which_heuristic = m;
     Heuristic_reloc = heu_relocation{which_heuristic};
     Heuristic_stack = heu_stack{which_heuristic};
     shift_index = (m-1)*length(different_horizons_known);
-
-    if m==2 || m==4
-      horizon_options = 1;
-    else
-       horizon_options = 5;
-    end
+    horizon_options = 1;
+%    if m==2 || m==4
+%      horizon_options = 1;
+%    else
+%       horizon_options = 5;
+%    end
         
     for h=1:horizon_options
         h

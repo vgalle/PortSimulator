@@ -8,13 +8,10 @@ function  [selected_block, tempRows, Blocks] = ...
 % Then, an incoming or reshuffling container is
 % placed on the column with the lowest RI. 
 
+% Last Modification: 9/16
+% Virgile
 
 global H 
-
-% ?? the value is zero?! ??
-% !!FIXED THIS!!
-
-% value = Containers.Block_value(ID_this_container);
 
 value = Containers.Departure_time(ID_this_container);
 zone_incoming = Containers.Departure_zone(ID_this_container);
@@ -115,7 +112,6 @@ selected_tier = H - tempHeight;
 
 Blocks.Free_spots(selected_block) = Blocks.Free_spots(selected_block)-1;
 Blocks.unassigned_slots_to_ships(selected_block) =Blocks.unassigned_slots_to_ships(selected_block)+1;
-% tempBlocks = Blocks;
 tempRows = Rows;
 tempRows.Height (selected_col,selected_row) = tempRows.Height (selected_col,selected_row) +1;
 tempRows.Config_id(selected_tier , selected_col, selected_row) = ID_this_container;

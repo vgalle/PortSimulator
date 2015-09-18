@@ -8,17 +8,13 @@ function  [selected_row, selected_col, selected_tier, same_row]  = ...
 % Then, an incoming or reshuffling container is
 % placed on the column with the lowest RI. 
 
-% Last Modification: 2/2
+% Last Modification: 9/16
 % Virgile
 global H 
-
-% ?? the value is zero?! ??
-% !!FIXED THIS!!
 
 
 blockID_this_container = Containers.Block(ID_this_container);
 
-% value = Containers.Block_value(ID_this_container);
 value = Containers.Departure_time(ID_this_container);
 zone_incoming = Containers.Departure_zone(ID_this_container);
 
@@ -31,8 +27,6 @@ col_this_container = Containers.Column(ID_this_container);
 if within_same_row
     
     containers_ID_in_this_bay = Rows.Config_id(:,:,rowID_this_container);
-%     containers_value_in_this_bay = Rows.Config_value(:,:,rowID_this_container);
-    
     height = Rows.Height(:,rowID_this_container);
     minimum = Rows.Minimum(:,rowID_this_container);
 %     We start with all possible col_this_container as candidate col_this_containers in the row
@@ -50,7 +44,7 @@ if within_same_row
         config_id_this_column = containers_ID_in_this_bay(:,i);
         dep_time_this_column = Containers.Departure_time(config_id_this_column(config_id_this_column~=0)); 
 
-     % in the sace of incomplete info
+     % in the case of incomplete info
         tempZone =  Containers.Departure_zone(config_id_this_column(config_id_this_column>0));
         if sum(Containers.Departure_zone)>0
             num_smaller_zone_below_new_container = sum(tempZone<zone_incoming);
@@ -120,7 +114,6 @@ else
     target_cols = zeros(5,0);
     for r=1:size(rowsID_in_this_block,1)
         containersID_in_this_row = Rows.Config_id(:,:,rowsID_in_this_block(r));
-%         containersvalue_in_this_row = Rows.Config_value(:,:,rowsID_in_this_block(r));
         for c=1:size(containersID_in_this_row,2)
             target_cols(1,counter) = rowsID_in_this_block(r);
             target_cols(2,counter) = c;

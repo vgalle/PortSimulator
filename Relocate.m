@@ -1,7 +1,7 @@
 function [Blocks,Rows,Containers] = ...
     Relocate(relocate_ID,selected_row,selected_col,selected_tier,Blocks,Rows,Containers,Maxzone,same_row)
 
-% Last Modification: 2/2
+% Last Modification: 9/16
 % Virgile
 
 % This function updates the configuration when the relocation of the
@@ -27,7 +27,7 @@ if same_row == 0
     Rows.Number_cont(Containers.Row(relocate_ID)) = Rows.Number_cont(Containers.Row(relocate_ID)) - 1;
     Rows.Number_cont(selected_row) = Rows.Number_cont(selected_row) + 1;
 end
-% Finally I update its coordinates with the new ones and add one to the
+% Finally we update its coordinates with the new ones and add one to the
 % number of relocations.
 Containers.Row(relocate_ID) = selected_row;
 Containers.Column(relocate_ID) = selected_col;

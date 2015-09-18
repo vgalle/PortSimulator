@@ -65,6 +65,10 @@ Initialize the yard, the ships and the trucks for the experiments.
 
 	B) Generate_stacking_containers(mu,lambda,Ships,n_cont_per_ship,numDays) simulates the containers that are not in the yard initially and that are going to arrive by ship. We generate the arrival of ships and for each container their pick-up time.
 
+	Minor Modules:
+
+	heights_of_row (row_config), mins_of_row (row_config,Number_cont_block)
+
 
 
 2) Simulator
@@ -94,24 +98,20 @@ Given a initial state of the simulation, uses the decisions rules given as input
 			iii) Myopic
 			iv) RI
 
-
-
 	C) Yard modification:
 	Those modules modify the yard after decisions have been made. Therefore we have
 		i) Relocate
 		ii) Retreival
-		iii) Stacking
+		iii) stacking
 
 	D) Update horizon
 
-	E) compute_relocation_time(Containers.Row(relocate_ID), selected_row) Computes the time of a relocation (i.e. changes if it is out of row)
+	Minor Modules:
+
+	compute_relocation_time(Containers.Row(relocate_ID), selected_row) Computes the time of a relocation (i.e. changes if it is out of row)
+
 
 3) Data Output
-
-
-************ Description **************
-
-1) Initialization
 
 	
 

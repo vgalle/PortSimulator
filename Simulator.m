@@ -224,17 +224,15 @@ while Time <= Tlimit
                 Containers.Block(containerID_to_be_discharged) = stacking_block;
                 Containers.Status(containerID_to_be_discharged) = -2;
                 Ships.num_discharged(ships_still_being_discharged(s))=Ships.num_discharged(ships_still_being_discharged(s))+1;
-
             end
             if BerthCranes.Status(BCs_this_ship(j),Time)==0 && ~isempty(available_to_discharge_ID) && sum(Blocks.Free_spots)==0
                 error('There is no free slot to assign to the discharged container!');
             end
-
         end
     end
    Time = Time+1;
    if sum(Containers.Departure_zone)~=0
-        [Blocks,Rows,Containers,RTGs, BerthCranes] = update_horizon2(Blocks,Rows,Containers,RTGs, BerthCranes,Time);
+        [Blocks,Rows,Containers,RTGs, BerthCranes] = update_horizon(Blocks,Rows,Containers,RTGs, BerthCranes,Time);
    end
 end
 

@@ -1,32 +1,13 @@
 function [Blocks,Rows,Containers] = stacking(containerID,stacking_block, stacking_row, ...
                              stacking_col, stacking_tier, Blocks,Rows,Containers,Time)
 
-% Last Modification: 2/2
+% Last Modification: 9/16
 % Setareh
 
 % This function updates the configuration when a container is stacked.
 
 global H
-
-% first check if the column configuration has remained unchanged since the time that we selected it
-% current_config_stacking_column = Rows.Config_id(:,stacking_col,stacking_row);
-% former_config_stacking_column = Containers.config_stacking_column(:,containerID);
-
-
-% is_config_the_same = double(sum(current_config_stacking_column==former_config_stacking_column)== H);
     
-% if something has changed, re-run the stacking heuristic
-% if ~is_config_the_same
-%     switch heuristic
-%         case 'Myopic'
-%            [stacking_block, stacking_row, stacking_col, stacking_tier] = Myopic_stack (containerID, stacking_block, Blocks, Rows, Containers); 
-%         case 'ATIB'
-%            [stacking_block, stacking_row, stacking_col, stacking_tier]  = ATIB_stack (containerID, stacking_block, Blocks, Rows, Containers, H);
-%     end
-% end
-    
-    
-
 % add 1 to number of containers in the stacking row
 Rows.Number_cont(stacking_row) = Rows.Number_cont(stacking_row) + 1;
 
@@ -43,16 +24,16 @@ ID_zone_0_containers_in_stacking_block = ID_containers_in_stacking_block(is_zone
 
 if Containers.Departure_zone(containerID)>0
         
-    % * we add 1 to rows.config_value of other containers whose zone is greater than zero, because we now have 1 more container
+% * we add 1 to rows.config_value of other containers whose zone is greater than zero, because we now have 1 more container
     temp(temp > Blocks.Number_cont(stacking_block)) = temp(temp > Blocks.Number_cont(stacking_block)) + 1;
        
-    % * updated config_value of the stacking row and column
+% * updated config_value of the stacking row and column
     temp(H-stacking_tier+1,stacking_col,stacking_row_index) = Blocks.Number_cont(stacking_block)+Containers.Departure_zone(containerID);
     
-    % ** we set block value of stacking container to zone + number of containers
+% ** we set block value of stacking container to zone + number of containers
     Containers.Block_value(containerID) = Blocks.Number_cont(stacking_block) + 1 + Containers.Departure_zone(containerID);
             
-    % ** we add 1 to block value of other containers whose zone is greater than zero, because we now have 1 more container
+% ** we add 1 to block value of other containers whose zone is greater than zero, because we now have 1 more container
     Containers.Block_value(ID_zone_0_containers_in_stacking_block) = Containers.Block_value(ID_zone_0_containers_in_stacking_block)+1;
 
 else
@@ -60,8 +41,8 @@ else
     departure_time_of_zone_0_containers = Containers.Departure_time(ID_zone_0_containers_in_stacking_block);
     departure_time_of_zone_0_containers = [departure_time_of_zone_0_containers  Containers.Departure_time(containerID)];
     departure_time_of_zone_0_containers = [departure_time_of_zone_0_containers ; [ID_zone_0_containers_in_stacking_block' containerID]];
-    % departure_time_of_zone_0_containers =[depTime1  depTime2 ... depTimen
-    %                                       ID1         ID2    ...  IDn ];
+% departure_time_of_zone_0_containers =[depTime1  depTime2 ... depTimen
+%                                       ID1         ID2    ...  IDn ];
     
     [~, index_sorted_dep_times] = sort(departure_time_of_zone_0_containers(1,:));
     sorted_dep_times = departure_time_of_zone_0_containers( :,index_sorted_dep_times);
@@ -71,18 +52,18 @@ else
     is_value_greater_than_rank_stacking_container = Rows.Config_value(:,:,rows_in_stacking_block)>=rank_stacking_container;
     ID_value_greater_than_rank_stacking_container = ID_containers_in_stacking_block(is_value_greater_than_rank_stacking_container);
     
-    % ** Add 1 to block value of containers whose value is greater than or equal to stacking rank
+% ** Add 1 to block value of containers whose value is greater than or equal to stacking rank
     if ~isempty(ID_value_greater_than_rank_stacking_container)
         Containers.Block_value(ID_value_greater_than_rank_stacking_container) = Containers.Block_value(ID_value_greater_than_rank_stacking_container)+1;
     end
 
-    % ** Assign the Block_value of stacking container
+% ** Assign the Block_value of stacking container
     Containers.Block_value(containerID) = rank_stacking_container;
     
-    % * we add 1 to rows.config_value of other containers whose value is greater than or equal to stacking rank
+% * we add 1 to rows.config_value of other containers whose value is greater than or equal to stacking rank
     temp(temp >= rank_stacking_container) = temp(temp >= rank_stacking_container) + 1;  
 
-    % * updated config_value of the stacking row and column
+% * updated config_value of the stacking row and column
     temp(H-stacking_tier+1,stacking_col,stacking_row_index) = rank_stacking_container;
     
 end
@@ -108,9 +89,4 @@ Containers.Row(containerID) = stacking_row;
 Containers.Column(containerID) = stacking_col;
 Containers.Tier(containerID) = stacking_tier;
 Containers.Actual_stacking_time(containerID) = Time;
-% Rows.isColumnLocked(stacking_col,stacking_row)=0;
-
-% if Blocks.Free_spots(stacking_block)==0
-%     error('capacity exceeded after stacking!');
-% end
 

@@ -1,7 +1,7 @@
 function  [selected_block, selected_row, selected_col, selected_tier,Row_counter,Col_counter] = ...
     Closest_stack (chosen_blocks, Blocks, Rows,Row_counter,Col_counter)
 
-% Last Modification: 2/2
+% Last Modification: 9/16
 % Setareh
 
 % the ATIB heuristic tries to place an incoming (or reshuffling)
