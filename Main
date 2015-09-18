@@ -1,0 +1,107 @@
+
+Full_info = 1;
+% approx. 3 ships in the first 6 hours 
+n_ships = 3;
+mu = n_ships/(60*6);  
+n_cont_per_ship = 300;
+numDays = 1;
+total_ships = numDays*n_ships;
+%3500 trucks in 24 hours
+lambda = 3500/(60*24);
+B = 30;
+R = 50;
+C = 7;
+numTiers = 4;
+gamma = 0.9;
+horizon_known_length = 30;
+n_BC = 12;
+n_RTG = B;
+n_trucks = 58; %58;
+
+[Blocks,Rows,Containers, Ships, berthcranes, RTGs, trucks, max_zone] = Initialization(Full_info,lambda,mu,total_ships,n_cont_per_ship,B,R,C,numTiers,...
+                                                                            gamma,horizon_known_length,n_BC,n_RTG,n_trucks,numDays);
+
+heu_relocation = {'Myopic', 'Lowest_Height','RI','Closest'};
+heu_stack = {'Myopic', 'Lowest_Height','RI','Closest'};
+which_heuristic = 1
+Heuristic_reloc = heu_relocation{which_heuristic};
+Heuristic_stack = heu_stack{which_heuristic};
+within_same_row= 1;
+different_horizons_known = [15 30 60 120 180 1000000];
+h = 1;
+horizon = different_horizons_known(h);
+
+[cs,cr,N_reloc,N_retrieval,N_stacked,Time,sign_RTGs_status,FinalBlocks,FinalRows,FinalContainers,FinalRTGs, FinalBerthCranes,FinalTrucks, FinalShips] = ...
+        Simulator(Blocks,Rows,Containers, berthcranes, RTGs,Ships, trucks,Heuristic_reloc,Heuristic_stack,within_same_row);
+
+results = cell(0,2);
+
+[results{2,1},results{3,1},results{4,1} ,results{5,1},results{6,1},results{7,1},results{8,1},results{9,1},...
+ results{10,1},results{11,1},results{12,1},results{13,1},results{14,1},results{15,1},results{16,1}...
+ results{17,1},results{18,1},results{19,1},results{20,1},results{21,1},results{22,1}] = ...
+deal('horizon','retrieved','unretrieved','discharged/Not Stacked','undischarged','stacked','numDays','total_rel','ave_rel','max_rel','total_ret_del','ave_ret_del','max_ret_del',...
+    'total_stack_del','ave_stack_del','max_stack_del','min_dwell_time','max_dwell_time','n_ships','rate_trucks','rate_ships');
+
+results{1,2} = heu_relocation{which_heuristic};
+results(2,2) = num2cell(horizon);
+results(3,2) = num2cell(N_retrieval);
+results(4,2) = num2cell(sum(FinalContainers.Status==0 & FinalContainers.Departure_time<Time));
+results(5,2) = num2cell(sum(FinalContainers.Arrival_time<Time & FinalContainers.Status==-2));
+results(6,2) = num2cell(sum(FinalContainers.Status==-1 & FinalContainers.Arrival_time<Time));
+results(7,2) = num2cell(N_stacked);
+results(8,2) = num2cell(numDays);
+results(9,2) = num2cell(N_reloc);
+results(10,2) = num2cell(N_reloc/N_retrieval);
+results(11,2) = num2cell(max(FinalContainers.Number_reloc));
+     
+retrieved_containers_dep_time = FinalContainers.Departure_time(FinalContainers.Status==1);        
+retrieved_containers_actual_dep_time = FinalContainers.Actual_departure_time(FinalContainers.Status==1);
+
+results(12,2) = num2cell(sum(retrieved_containers_actual_dep_time-retrieved_containers_dep_time));
+results(13,2) = num2cell(sum((retrieved_containers_actual_dep_time-retrieved_containers_dep_time))/N_retrieval);    
+results(14,2) = num2cell(max(retrieved_containers_actual_dep_time-retrieved_containers_dep_time));    
+
+statusTemp = (FinalContainers.Status==0 | FinalContainers.Status==1) & FinalContainers.discharge_time~=inf;
+stacked_containers_discharge_time = FinalContainers.discharge_time(statusTemp);
+stacked_containers_actual_stack_time = FinalContainers.Actual_stacking_time(statusTemp);
+results(15,2) = num2cell(sum(stacked_containers_actual_stack_time-stacked_containers_discharge_time));
+results(16,2) = num2cell(sum((stacked_containers_actual_stack_time-stacked_containers_discharge_time))/N_stacked);    
+if isempty(stacked_containers_actual_stack_time-stacked_containers_discharge_time)
+   results{17,2} = 'NA';
+else
+    results(17,2) = num2cell(max(stacked_containers_actual_stack_time-stacked_containers_discharge_time));
+end  
+statusTemp2 = (FinalContainers.Status==1) & FinalContainers.discharge_time~=inf;
+stack_time = FinalContainers.Actual_stacking_time(statusTemp2);
+departure_time = FinalContainers.Actual_departure_time(statusTemp2);      
+if isempty(departure_time)
+    results{18,2} = 'NA';
+    results{19,2} = 'NA';
+else
+    results(18,2) =  num2cell(min(departure_time- stack_time));
+    results(19,2) = num2cell(max(departure_time- stack_time));
+end
+results(20,2) = num2cell(n_ships);
+results(21,2) = num2cell(lambda);
+results(22,2) = num2cell(mu);
+                
+for n=1:total_ships
+    containers_in_this_ship = FinalContainers.ID(FinalContainers.Ship==n);
+    if sum(FinalContainers.Status(containers_in_this_ship)==-1)>0
+        duration_of_discharge_process = inf;
+    else
+        last_containers_in_this_ship = containers_in_this_ship(end);
+        first_container_in_this_ship = containers_in_this_ship(1);
+        duration_of_discharge_process = FinalContainers.discharge_time(last_containers_in_this_ship) - FinalContainers.discharge_time(first_container_in_this_ship);
+    end
+    results{22+n,1} = sprintf('Ship%d: time discharge',n);
+    results(22+n,2) = num2cell(duration_of_discharge_process);
+end
+temp = 22 + total_ships
+for r =1:length(RTGs.ID)
+    results{temp+r,1}=sprintf('RTG%d: utilization',r);
+    results{temp+length(RTGs.ID)+r,1}=sprintf('RTG%d:to_other_rows',r);
+    results(temp+r,2) = num2cell(sum(FinalRTGs.Status(r,:)~=0)/(Time-1));
+    results(temp+length(FinalRTGs.ID)+r,2) = num2cell(FinalRTGs.relocate_to_other_rows(1,r));
+end
+results
