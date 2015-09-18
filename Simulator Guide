@@ -35,31 +35,90 @@ It does not take into account transhipments and outbound flow (Trcuks -> Yard ->
 ************ Modules ***************
 
 1) Initialization
-Initialize the yard, the ships and the trucks for the experiments
+Initialize the yard, the ships and the trucks for the experiments.
+	Full_info: 1 if all containers are known
+	lambda: Arrival rates of trucks (A reasonnable value could be 1500 in the first 12 hours of the day)
+	mu: Arrival rate per ships (A reasonnable value could be 3 in the first 6 hours of the day)
+	n_ships: Total number of ships over the time horizon
+	n_cont_per_ship: Number of containers per ships
+	B: # of blocks
+	R: # of rows per block
+	C: # of columns per row
+	numTiers: maximum height of a column
+	gamma: utilization factor of each row. We assume that the row starts with ceil(gamma*(C*(H-1)+1)) containers in it
+	horizon_length_known_containers: The time length in minutes of a time zone
+    n_BC: # of berth cranes
+    n_RTG: # of RTGs
+    n_trucks: # of Trucks
+    numDays: # of days of the simulation
+
+    Assumptions:
+
+    a) Time is in minutes
+    b) In case of incomplete information, we suppose that we know the container departing in the next time zone (zone 0), for the other ones we know which groups (or zone) they belong to. There are XXX zones ***************
+    c) Trucks coming only during the first half of the day.
+
+    Submodules: 
+
+	A) external_truck_arrivals(lambda,Ntot) simulates pick-up times of containers given an arrival rate and the total number
+	of containers.
+
+	B) Generate_stacking_containers(mu,lambda,Ships,n_cont_per_ship,numDays) simulates the containers that are not in the yard initially and that are going to arrive by ship. We generate the arrival of ships and for each container their pick-up time.
+
+
 
 2) Simulator
 Given a initial state of the simulation, uses the decisions rules given as input to manage the flow of containers
 
-	a) stack_or_retreive
-	Decides if there is a conflict at a block in a yard if we want to stack or retreive.
+	Blocks, Rows, Containers, BerthCranes, RTGs, Ships, trucks: Structures with attributes defined in the code. We give the initial state as input
+	Heuristic_reloc, Heuristic_stack: The two heuristics to decide how to relocate containers and how to stack them.
+	within_same_row: = 1 if we only allow for relocations within the same row of a block
+	Look_ahead: Value for the Petering Heuristic
 
-	b) Heuristics
+    Submodules: 
+
+	A) stack_retrieve_decision with stack_or_retrieve
+	Decides if there is a conflict at a block in a yard if we want to stack or retreive. The rule is the following. If we have a container that needs to be retrieved or relocated that waited longer than a container to be stacked and that the container to be stacked waited less than the max limit that we imposed, then we relocate or retrieve. Otherwise we stack.
+	Of course, this rule is easily changable.
+	parameters: Containers (information about containers), target_ID (containers to be relocated), ready_to_stack_IDs (containers to be stacked), max_stack_wait_time (The maximum limit to wait for a container at the block before it is stacked), max_retrieve_wait_time (the maximum wait time before a container is relocated), Time (the time of the simulation), duration_disch (the duration of a discharge).
+
+	B) Heuristics
 		i) Relocate: Decides which slots to relocate a blocking container
 		ii) Stack: Decides which slots to stack a incoming container
-		iii) Block_allocation: Uses Heuristic_stack to choose the best block to direct the truck to. The exact slot is determined when the container is ready to be stacked.
+		iii) Block_allocation: Uses Heuristic_stack to choose the best block to direct the truck to: in order to do so we find the best slot in the yard for the discharged container and choose the block of this slot. The exact slot is determined when the container is ready to be stacked.
 
-	c) Yard modification:
+		Each heuristic takes into account if we allow for move out of the row or not (within_same_row)
+		The heuristics coded so far are:
+			i) Lowest Height
+			ii) Closest
+			iii) Myopic
+			iv) RI
+
+
+
+	C) Yard modification:
 	Those modules modify the yard after decisions have been made. Therefore we have
 		i) Relocate
 		ii) Retreival
 		iii) Stacking
 
+	D) Update horizon
+
+	E) compute_relocation_time(Containers.Row(relocate_ID), selected_row) Computes the time of a relocation (i.e. changes if it is out of row)
+
 3) Data Output
 
 
-************ Submodules **************
+************ Description **************
 
-Initialization2(Full_info,lambda,mu,n_ships,n_cont_per_ship,B,R,C,numTiers,gamma,horizon_length_known_containers,...
-                    n_BC,n_RTG, n_trucks)
+1) Initialization
+
+	
+
+
+
+
+
+
 
 

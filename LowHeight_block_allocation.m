@@ -1,6 +1,6 @@
 function  [selected_block, tempRows, Blocks] = LowHeight_block_allocation (ID_this_container,chosen_blocks, Blocks, Rows)
 
-% Last Modification: 2/8
+% Last Modification: 9/17
 % Virgile
 
 
@@ -20,9 +20,6 @@ chosen_blocks = sort(chosen_blocks);
 h = inf;
 selected_block = inf;
 queue_length_selected_block = inf;
-% selected_row = inf;
-% selected_col = inf;
-
 
 for b=1:length(chosen_blocks)
     queue_length_this_block = Blocks.num_containers_to_be_stacked_here(chosen_blocks(b));
@@ -39,7 +36,6 @@ for b=1:length(chosen_blocks)
         end
     end
 end
-% selected_tier = height(selected_col,selected_row) + 1;
 tempHeight = Rows.Height(selected_col,selected_row);
 
 selected_tier = H - tempHeight;

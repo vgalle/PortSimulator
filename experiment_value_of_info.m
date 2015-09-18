@@ -1,37 +1,31 @@
-Full_info = 0;
+Full_info = 1;
 
 % approx. 3 ships in the first 6 hours 
-n_ships = 3; %3;
+n_ships = 3;
 mu = n_ships/(60*6);  
 
-n_cont_per_ship = 350; %350
+n_cont_per_ship = 350;
 
-numDays = 3;
+numDays = 1;
 
 total_ships = numDays*n_ships;
 
-%500 trucks in 12 hours
-% lambda = 1000/(60*24); %1000/(60*24); 
-% lambda = 1500/(60*24); %1000/(60*24); 
-% lambda = 2000/(60*24); %1000/(60*24); 
-% lambda = 2500/(60*24); %1000/(60*24); 
-% lambda = 3000/(60*24); %1000/(60*24); 
-lambda = 3500/(60*24); %1000/(60*24); 
+%3500 trucks in 24 hours
+lambda = 3500/(60*24);
 
-B = 30;%30;
-R = 50;%50;
+B = 30;
+R = 50;
 C = 7;
 numTiers = 4;
 gamma = 0.9;
 horizon_known_length = 30;
-n_BC = 12; %12;
+n_BC = 12;
 n_RTG = B;
 n_trucks = 58; %58;
 
 within_same_row= 1;
 
 heu_relocation = {'Myopic', 'Lowest_Height','RI','Closest'};
-Look_ahead = 5;
 heu_stack = {'Myopic', 'Lowest_Height','RI','Closest'}; 
 
 num_heuristics = size(heu_stack,2);
@@ -42,8 +36,8 @@ different_horizons_known = [15 60 120 180 1000000];
 overall_stats2 = cell(0,length(different_horizons_known));
 % 
 % 
-[Blocks,Rows,Containers, Ships, berthcranes, RTGs, trucks, max_zone, defined_horizon] = Initialization(Full_info,lambda,mu,total_ships,n_cont_per_ship,B,R,C,numTiers,...
-                                                                            gamma,horizon_known_length,n_BC,n_RTG,n_trucks);
+[Blocks,Rows,Containers, Ships, berthcranes, RTGs, trucks, max_zone] = Initialization(Full_info,lambda,mu,total_ships,n_cont_per_ship,B,R,C,numTiers,...
+                                                                            gamma,horizon_known_length,n_BC,n_RTG,n_trucks,numDays);
 % % 
 [overall_stats2{2,1},overall_stats2{3,1},overall_stats2{4,1} ,overall_stats2{5,1},overall_stats2{6,1},overall_stats2{7,1},overall_stats2{8,1},overall_stats2{9,1},...
  overall_stats2{10,1},overall_stats2{11,1},overall_stats2{12,1},overall_stats2{13,1},overall_stats2{14,1},overall_stats2{15,1},overall_stats2{16,1}...
@@ -73,7 +67,7 @@ for m = 1:1 %length(heu_relocation)
 
         u=2;
         [cs,cr,N_reloc,N_retrieval,N_stacked,Time,sign_RTGs_status,FinalBlocks,FinalRows,FinalContainers,FinalRTGs, FinalBerthCranes,FinalTrucks, FinalShips] = ...
-        Simulator(Blocks,Rows,Containers, berthcranes, RTGs,Ships, trucks,Heuristic_reloc,Heuristic_stack,within_same_row,Look_ahead);
+        Simulator(Blocks,Rows,Containers, berthcranes, RTGs,Ships, trucks,Heuristic_reloc,Heuristic_stack,within_same_row);
 
         overall_stats2(u,h+1+shift_index) = num2cell(different_horizons_known(h));
         u=u+1;

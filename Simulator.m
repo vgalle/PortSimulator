@@ -1,5 +1,5 @@
 function [cs,cr,N_reloc,N_retrieval,N_stacked,Time,sign_RTGs_status, FinalBlocks,FinalRows,FinalContainers,FinalRTGs, FinalBerthCranes,FinalTrucks,FinalShips] = ...
-    Simulator(Blocks,Rows,Containers, BerthCranes, RTGs,Ships, trucks,Heuristic_reloc,Heuristic_stack,within_same_row,Look_ahead)
+    Simulator(Blocks,Rows,Containers, BerthCranes, RTGs,Ships, trucks,Heuristic_reloc,Heuristic_stack,within_same_row)
 
 % Last Modification: 9/16
 % Virgile
@@ -52,7 +52,7 @@ while Time <= Tlimit
         elseif isempty(ready_to_stack_IDs) && ~isempty(target_ID) 
             stack_retrieve_decision = 2;
         elseif ~isempty(target_ID) && ~isempty(ready_to_stack_IDs)           
-            stack_retrieve_decision = stack_or_retrieve(Containers, target_ID, ready_to_stack_IDs,max_stack_wait_time, max_retrieve_wait_time, Time);
+            stack_retrieve_decision = stack_or_retrieve(Containers, target_ID, ready_to_stack_IDs,max_stack_wait_time, max_retrieve_wait_time, Time,duration_disch);
         else
             RTGs.Status(i,Time) = 0;
             stack_retrieve_decision=inf;
@@ -86,8 +86,6 @@ while Time <= Tlimit
                             [selected_row, selected_col, selected_tier, same_row] = RI_relocate (relocate_ID, within_same_row, Blocks, Rows, Containers);
                             cr(1,size(cr,2)+1)=relocate_ID; 
                             cr(2,size(cr,2)) = ((Containers.Block(relocate_ID)-1)*B) + ((selected_row-1)*length(Rows.ID)) + selected_col;
-                        case 'Petering'
-                            [selected_row, selected_col, selected_tier, same_row, relocate_ID] = Petering_relocate (relocate_ID, within_same_row, Blocks, Rows, Containers,Look_ahead);
                     end
                     
                     RTGs.relocate_to_other_rows(1,Containers.Block(relocate_ID))=RTGs.relocate_to_other_rows(1,Containers.Block(relocate_ID))+(~same_row);

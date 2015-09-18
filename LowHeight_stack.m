@@ -1,7 +1,7 @@
 function  [selected_block, selected_row, selected_col, selected_tier]  = ...
     LowHeight_stack (chosen_blocks, Blocks, Rows)
 
-% Last Modification: 2/8
+% Last Modification: 9/17
 % Virgile
 
 R = length(Blocks.Rows_in_block(:,1));

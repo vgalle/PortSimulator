@@ -1,12 +1,9 @@
-function [Blocks,Rows,Containers, Ships, BerthCranes, RTGs, trucks, max_zone, defined_horizon] = ...
+function [Blocks,Rows,Containers, Ships, BerthCranes, RTGs, trucks, max_zone] = ...
     Initialization(Full_info,lambda,mu,n_ships,n_cont_per_ship,B,R,C,numTiers,gamma,horizon_length_known_containers,...
-                    n_BC,n_RTG, n_trucks)
+                    n_BC,n_RTG, n_trucks,numDays)
 
-% Last Modification: 2/6
-% Setareh
-
-
-numDays = 3;
+% Last Modification: 9/16
+% Virgile
 
 
 % Full_info: 1 if all containers are known
@@ -23,10 +20,10 @@ numDays = 3;
 
 global H horizon Maxzone Tlimit;
 
-Tlimit = numDays * 1440;
+minutes_in_day = 1440;
+Tlimit = numDays * minutes_in_day;
 H = numTiers;
 horizon = horizon_length_known_containers;
-defined_horizon = horizon_length_known_containers;
 
 Nrow = ceil(gamma*(C*(H-1)+1));
 Nblo = R*Nrow;
@@ -34,7 +31,13 @@ Ntot = B*Nblo;
 
 % Blocks give the relationship between the blocks and the rows: meaning
 % Rows_in_block are giving the rows ID of the rows in a given block.
-
+% Rows has 6 keys:
+% 1- ID
+% 2- Rows_in_block lists the rows that forms the block
+% 3- Number_cont counts the number of containers in the block
+% 4- Free_spots counts the number of free spots in the block
+% 5- unassigned_slots_to_ships gives the nuber of slots remained that are not assigned for stacking in this block
+% 6- num_containers_to_be_stacked_here gives the number of blocks waiting to be stacked here.
 Blocks = struct('ID',1:B,'Rows_in_block',zeros(R,B),'Number_cont',zeros(1,B),...
                 'Free_spots',(R*C*H-(H-1))*ones(1,B), ...
                 'unassigned_slots_to_ships',(R*C*H-(H-1))*ones(1,B),...
@@ -58,12 +61,28 @@ Rows = struct('ID',1:B*R,'Block',zeros(1,B*R),'Number_cont',zeros(1,B*R),'Height
 for r=1:B*R
     Rows.Block(r) = floor((r-1)/R)+1;
 end
-% Containers has 11 keys:
-% 1- ID // 2-Status = -1 in vessel, 0 in yard, 1 retrieved // 
-% 3- Arrival_time // 4- Departure_zone // 5- Departure_time //
-% 6- Block // 7-Row // 8-Column // 9-Tier // 10- Block_value is the value 
-% that this container takes in a given row // 11- Number_reloc is the 
-% number of time that this container has been relocated.
+
+% Containers has 19 keys:
+% 1- ID
+% 2- Status = -1 in vessel, 0 in yard, 1 retrieved
+% 3- Arrival_time: Time of the ship
+% 4- Departure_zone: Time zone of the pick-up truck
+% 5- Departure_time: Exact time of pick-up
+% 6- Ship: ID of the ship the container is currently in
+% 7- Block: ID of the block the container is currently in
+% 8- Row: ID of the row the container is currently in
+% 9- Column: column number the container is currently in
+% 10- Tier: tier number of the ship the container is currently in counting from bottom to top
+% 11- config_stacking_column: Configuration of the stacking column
+% 12- Block_value is the value that this container takes in a given row
+% 13- Number_reloc is the number of time that this container has been relocated.
+% 14- discharge_time: time it is discharged from the ship
+% 15- discharging_crane: The crane currenlty discharging the container
+% 16- Actual_departure_time: The time it was actually picked-up
+% 17- Actual_stacking_time: The time it was stacked in the yard
+% 18- Delay: Actual_departure_time - Arrival_time
+% 19- internal_truck: The ID of the internal truck moving the container to be stacked.
+
 Containers = struct('ID',1:Ntot,'Status',zeros(1,Ntot),'Arrival_time',zeros(1,Ntot),'Departure_zone',zeros(1,Ntot),...
     'Departure_time',zeros(1,Ntot),'Ship',zeros(1,Ntot),'Block',zeros(1,Ntot),'Row',zeros(1,Ntot),'Column',zeros(1,Ntot),...
     'Tier',zeros(1,Ntot),'config_stacking_column',zeros(H,Ntot),'Block_value',zeros(1,Ntot),...
@@ -75,23 +94,14 @@ retrieve_times = external_truck_arrivals(lambda,Ntot);
 
 
 %*****************************
-% Trucks coming only during the first half od the day
-num_days = ceil(max(retrieve_times)/1440);
+% Trucks coming only during the first half of the day
+num_days = ceil(max(retrieve_times)/minutes_in_day);
 for d=0:2*num_days
-    temp = retrieve_times > (d*1440)+(1440/2);
-    retrieve_times(temp)=retrieve_times(temp) + 1440/2 ;
+    temp = retrieve_times > (d*minutes_in_day)+(minutes_in_day/2);
+    retrieve_times(temp)=retrieve_times(temp) + minutes_in_day/2 ;
 end
 %*****************************
 
-% if Full_info
-%     horizon = ceil(max(retrieve_times));
-%     Maxzone = 0;
-% else
-%     Maxzone = ceil((max(retrieve_times)-horizon)/horizon_estimated)+1;
-%     zone(1,:) = (retrieve_times(1,:)>horizon).*ceil((retrieve_times(1,:)-horizon)/horizon_estimated);
-% end
-
-minutes_in_day = 1440;
 if Full_info
     horizon = ceil(max(retrieve_times));
     Maxzone = 0;
@@ -102,20 +112,33 @@ end
 
 max_zone = Maxzone;
 
-% Max_zone: Total number of zones
-
-% Tlimit = (horizon + ( (Maxzone-1)* horizon_estimated) ) * time_scale;
-
-
-
+% BerthCranes has 3 keys:
+% 1- ID
+% 2- Status: 0 if idle or ID of the container it is discharging from a ship.
+% 3- ssigned_to_which_ship: ID of the ship it is assigned to
 BerthCranes = struct('ID',1:n_BC,'Status',zeros(n_BC,Tlimit), 'assigned_to_which_ship', zeros(n_BC,Tlimit));
 
+% Ships has 6 keys:
+% 1- ID
+% 2- arrival_time
+% 3- Number_cont: number of containers in the ship
+% 4- discharge_started = 1 if so, 0 if not
+% 5- num_discharged is the number of containers already discharged
+% 6- which_BC_assigned_to_ship is the list of berthcranes assigned to thi ship.
 Ships = struct('ID',1:n_ships,'arrival_time',zeros(1,n_ships),'Number_cont',...
     n_cont_per_ship*ones(1,n_ships),'discharge_started',zeros(1,n_ships),...
     'num_discharged',zeros(1,n_ships),'which_BC_assigned_to_ship',zeros(n_ships,n_BC));
 
+% RTGs has 3 keys:
+% 1- ID
+% 2- Status: 0 if idle or ID of the container that it is moving.
+% 3- relocate_to_other_rows counts the number of relocation performed by the RTG from one row to another
 RTGs = struct('ID',1:n_RTG,'Status',zeros(n_RTG,Tlimit), 'relocate_to_other_rows', zeros(1,n_RTG));
 
+% RTGs has 3 keys:
+% 1- ID
+% 2- Status: 0 if idle or ID of the container that it is moving.
+% 3- assigned_to_which_BC is the berthcranes to which the truck is assigned to
 trucks = struct('ID', 1:n_trucks, 'status' , zeros(n_trucks,Tlimit), 'assigned_to_which_BC' , zeros(n_trucks,Tlimit));
 
 n = 0;
@@ -182,8 +205,8 @@ for i=1:n_ships
         
         %*****************************
         % Trucks coming only during the first half od the day
-        temp = ceil(Stack_Cont(i,j)/1440);
-        if Stack_Cont(i,j)> ((temp-1)*1440) + 720
+        temp = ceil(Stack_Cont(i,j)/minutes_in_day);
+        if Stack_Cont(i,j)> ((temp-1)*minutes_in_day) + 720
             Stack_Cont(i,j) = Stack_Cont(i,j)+720;
         end
         %*****************************
@@ -194,15 +217,6 @@ for i=1:n_ships
         else
             Containers.Departure_zone(Ntot+1) = (horizon<Stack_Cont(i,j)&Stack_Cont(i,j)<=minutes_in_day) + 2*(Stack_Cont(i,j)>minutes_in_day);
         end
-
-% % %         if Full_info
-% % %             horizon = ceil(max(retrieve_times));
-% % %             Containers.Departure_zone(Ntot+1)= 0;
-% % %         else
-% % % %             Containers.Departure_zone(Ntot+1)= floor(Stack_Cont(i,j)/horizon);
-% % %         % changed by Setareh
-% % %             Containers.Departure_zone(Ntot+1)= ceil(Stack_Cont(i,j)/horizon)-1;
-% % %         end
 
         Containers.Departure_time(Ntot+1) = Stack_Cont(i,j);
         Containers.Block(Ntot+1) = 0;

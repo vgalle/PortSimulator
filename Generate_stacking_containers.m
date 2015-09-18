@@ -1,6 +1,6 @@
 function [Ships, Stack_Cont,Arrival_Ships] = Generate_stacking_containers(mu,lambda,Ships,n_cont_per_ship,numDays)
 
-% Last Modification: 2/5
+% Last Modification: 9/16
 % Virgile
 
 % This function generates the containers that are going to arrive during
@@ -9,13 +9,12 @@ function [Ships, Stack_Cont,Arrival_Ships] = Generate_stacking_containers(mu,lam
 % what should be fixed.
 % n_cont_per_ship: numer of container arriving per ships.
 % mu: arrival rate of ships
-% lambda : arrival rate of trucks: to have equilibirum we should have
-% mu=lambda/n_cont_per_ship.
+% lambda : arrival rate of trucks
 
 % We first set the time of arrival of the ships corresponding to a Poisson
 % porcess with mean arrival mu.
 
-% let's assume that the containers will leave over a period of 3 days = 3*1440
+% let us assume that the containers will leave over a period of 3 days = 3*1440
 % lambda = n_cont_per_ship/(3*1440);
 
 n_total_ships = length(Ships.ID);
@@ -47,10 +46,7 @@ Stack_Cont = zeros(n_total_ships,n_cont_per_ship);
 
 for i=1:n_total_ships
     Departure_times = zeros(1,n_cont_per_ship);
-%     Departure_times(1) = Arrival_Ships(i) + exprnd(1/lambda);
-
     Departure_times(1) = ceil(Ships.arrival_time(i)/1440)*1440 + exprnd(1/lambda);
-
     for j=2:n_cont_per_ship
         inter_arrival_time = exprnd(1/lambda);
         Departure_times(j) = Departure_times(j-1) + inter_arrival_time;
